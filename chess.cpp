@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <sstream>
 #include <set>
+#include <iomanip>
 
 using namespace std;
 
@@ -86,10 +87,10 @@ public:
     string getType() override { return "Pawn"; }
 };
 
-// Knight class
+// Knight class - Fixed naming to avoid confusion with King
 class Knight : public Piece {
 public:
-    Knight(Color c) : Piece(c, c == WHITE ? "WK" : "BK", c == WHITE ? "♘" : "♞", 3) {}
+    Knight(Color c) : Piece(c, c == WHITE ? "WN" : "BN", c == WHITE ? "♘" : "♞", 3) {}
     
     bool isValidMove(pair<int,int> from, pair<int,int> to, Piece* board[8][8]) override {
         int rowDiff = abs(from.first - to.first);
@@ -356,9 +357,9 @@ public:
                         }
                     } else if (pieceType == "Knight") {
                         if (board[i][j]->color == WHITE) {
-                            board[i][j]->name = "WK" + to_string(whiteKnightCount++);
+                            board[i][j]->name = "WN" + to_string(whiteKnightCount++);
                         } else {
-                            board[i][j]->name = "BK" + to_string(blackKnightCount++);
+                            board[i][j]->name = "BN" + to_string(blackKnightCount++);
                         }
                     } else if (pieceType == "Bishop") {
                         if (board[i][j]->color == WHITE) {
@@ -386,20 +387,20 @@ public:
     
     void printBoard() {
         cout << "\n";
-        cout << "  +---+---+---+---+---+---+---+---+\n";
+        cout << "  +-----+-----+-----+-----+-----+-----+-----+-----+\n";
         for (int i = 0; i < 8; i++) {
             cout << (8 - i) << " |";
             for (int j = 0; j < 8; j++) {
                 if (board[i][j] != nullptr) {
-                    cout << " " << board[i][j]->name << " |";
+                    cout << setw(4) << board[i][j]->name << " |";
                 } else {
-                    cout << "   |";
+                    cout << "     |";
                 }
             }
             cout << "\n";
-            cout << "  +---+---+---+---+---+---+---+---+\n";
+            cout << "  +-----+-----+-----+-----+-----+-----+-----+-----+\n";
         }
-        cout << "    a   b   c   d   e   f   g   h\n\n";
+        cout << "     a     b     c     d     e     f     g     h\n\n";
     }
     
     void showAlivePieces(Color color) {
@@ -535,6 +536,7 @@ public:
             return false;
         }
         
+        // FIXED: Only check path for sliding pieces, not knights
         if (piece->getType() != "Knight" && !isPathClear(from, to)) {
             return false;
         }
@@ -593,9 +595,9 @@ public:
             
             // Check if path is clear
             int start = kingside ? 5 : 1;
-            int end = kingside ? 7 : 3;
+            int end = kingside ? 6 : 3;
             for (int i = start; i <= end; i++) {
-                if (i != 4 && board[7][i] != nullptr) return false;
+                if (board[7][i] != nullptr) return false;
             }
             
             // Check if king would be in check during castling
@@ -612,9 +614,9 @@ public:
             
             // Check if path is clear
             int start = kingside ? 5 : 1;
-            int end = kingside ? 7 : 3;
+            int end = kingside ? 6 : 3;
             for (int i = start; i <= end; i++) {
-                if (i != 4 && board[0][i] != nullptr) return false;
+                if (board[0][i] != nullptr) return false;
             }
             
             // Check if king would be in check during castling
@@ -625,7 +627,7 @@ public:
         
         return true;
     }
-    
+
     bool makeMove(string pieceCode, string direction, int steps) {
         if (piecePositions.find(pieceCode) == piecePositions.end()) {
             cout << "Piece not found!\n";
