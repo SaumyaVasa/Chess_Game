@@ -687,7 +687,8 @@ public:
             return false;
         }
         
-        if (!isPathClear(from, to)) {
+        // Only check path for sliding pieces, not knights
+        if (piece->getType() != "Knight" && !isPathClear(from, to)) {
             cout << "Path blocked!\n";
             return false;
         }
