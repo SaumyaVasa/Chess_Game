@@ -6,6 +6,7 @@
 #include <sstream>
 #include <set>
 #include <iomanip>
+#include <limits>
 
 using namespace std;
 
@@ -30,7 +31,7 @@ public:
 // Pawn class
 class Pawn : public Piece {
 public:
-    Pawn(Color c) : Piece(c, c == WHITE ? "WP" : "BP", c == WHITE ? "♙" : "♟", 1) {}
+    Pawn(Color c) : Piece(c, c == WHITE ? "WP" : "BP", c == WHITE ? "P" : "p", 1) {}
     
     bool isValidMove(pair<int,int> from, pair<int,int> to, Piece* board[8][8]) override {
         int fromRow = from.first, fromCol = from.second;
@@ -90,7 +91,7 @@ public:
 // Knight class - Fixed naming to avoid confusion with King
 class Knight : public Piece {
 public:
-    Knight(Color c) : Piece(c, c == WHITE ? "WN" : "BN", c == WHITE ? "♘" : "♞", 3) {}
+    Knight(Color c) : Piece(c, c == WHITE ? "WN" : "BN", c == WHITE ? "N" : "n", 3) {}
     
     bool isValidMove(pair<int,int> from, pair<int,int> to, Piece* board[8][8]) override {
         int rowDiff = abs(from.first - to.first);
@@ -121,7 +122,7 @@ public:
 // Bishop class
 class Bishop : public Piece {
 public:
-    Bishop(Color c) : Piece(c, c == WHITE ? "WB" : "BB", c == WHITE ? "♗" : "♝", 3) {}
+    Bishop(Color c) : Piece(c, c == WHITE ? "WB" : "BB", c == WHITE ? "B" : "b", 3) {}
     
     bool isValidMove(pair<int,int> from, pair<int,int> to, Piece* board[8][8]) override {
         int rowDiff = abs(from.first - to.first);
@@ -159,7 +160,7 @@ public:
 // Rook class
 class Rook : public Piece {
 public:
-    Rook(Color c) : Piece(c, c == WHITE ? "WR" : "BR", c == WHITE ? "♖" : "♜", 5) {}
+    Rook(Color c) : Piece(c, c == WHITE ? "WR" : "BR", c == WHITE ? "R" : "r", 5) {}
     
     bool isValidMove(pair<int,int> from, pair<int,int> to, Piece* board[8][8]) override {
         return (from.first == to.first && from.second != to.second) || 
@@ -196,7 +197,7 @@ public:
 // Queen class
 class Queen : public Piece {
 public:
-    Queen(Color c) : Piece(c, c == WHITE ? "WQ" : "BQ", c == WHITE ? "♕" : "♛", 9) {}
+    Queen(Color c) : Piece(c, c == WHITE ? "WQ" : "BQ", c == WHITE ? "Q" : "q", 9) {}
     
     bool isValidMove(pair<int,int> from, pair<int,int> to, Piece* board[8][8]) override {
         int rowDiff = abs(from.first - to.first);
@@ -236,7 +237,7 @@ public:
 // King class
 class King : public Piece {
 public:
-    King(Color c) : Piece(c, c == WHITE ? "WKG" : "BKG", c == WHITE ? "♔" : "♚", 0) {}
+    King(Color c) : Piece(c, c == WHITE ? "WKG" : "BKG", c == WHITE ? "K" : "k", 0) {}
     
     bool isValidMove(pair<int,int> from, pair<int,int> to, Piece* board[8][8]) override {
         int rowDiff = abs(from.first - to.first);
@@ -404,7 +405,7 @@ public:
     }
     
     void showAlivePieces(Color color) {
-        cout << (color == WHITE ? "White's" : "Black's") << " alive pieces: ";
+        cout << "\n*** " << (color == WHITE ? "White's" : "Black's") << " alive pieces: ***\n";
         bool first = true;
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
@@ -415,7 +416,7 @@ public:
                 }
             }
         }
-        cout << "\n\n";
+        cout << "\n";
     }
     
     bool isPathClear(pair<int,int> from, pair<int,int> to) {
@@ -544,6 +545,20 @@ public:
         return true;
     }
     
+    string expandDirection(string shortDir) {
+        map<string, string> directionMap = {
+            {"U", "up"}, {"D", "down"}, {"L", "left"}, {"R", "right"},
+            {"SLU", "slantleftup"}, {"SLD", "slantleftdown"},
+            {"SRU", "slantrightup"}, {"SRD", "slantrightdown"},
+            {"UL", "upleft"}, {"UR", "upright"}, {"LU", "leftup"}, {"LD", "leftdown"},
+            {"RU", "rightup"}, {"RD", "rightdown"}, {"DL", "downleft"}, {"DR", "downright"},
+            {"CL", "castle-left"}, {"CR", "castle-right"}
+        };
+        
+        auto it = directionMap.find(shortDir);
+        return (it != directionMap.end()) ? it->second : shortDir;
+    }
+    
     pair<int,int> parseDirection(string direction, pair<int,int> from, int steps) {
         pair<int,int> to = from;
         
@@ -630,7 +645,7 @@ public:
 
     bool makeMove(string pieceCode, string direction, int steps) {
         if (piecePositions.find(pieceCode) == piecePositions.end()) {
-            cout << "Piece not found!\n";
+            cout << "\n*** ERROR: Piece '" << pieceCode << "' not found! ***\n";
             return false;
         }
         
@@ -638,7 +653,7 @@ public:
         Piece* piece = board[from.first][from.second];
         
         if (piece->color != currentTurn) {
-            cout << "It's not your turn!\n";
+            cout << "\n*** ERROR: It's not your turn! ***\n";
             return false;
         }
         
@@ -648,13 +663,13 @@ public:
         if (piece->getType() == "King" && (direction == "castle-left" || direction == "castle-right")) {
             bool kingside = (direction == "castle-right");
             if (!canCastle(currentTurn, kingside)) {
-                cout << "Cannot castle!\n";
+                cout << "\n*** ERROR: Cannot castle! ***\n";
                 return false;
             }
             
             if (currentTurn == WHITE) {
                 to = {7, kingside ? 6 : 2};
-                // Move rook
+                // Move rook first
                 if (kingside) {
                     board[7][5] = board[7][7];
                     board[7][7] = nullptr;
@@ -664,7 +679,7 @@ public:
                 }
             } else {
                 to = {0, kingside ? 6 : 2};
-                // Move rook
+                // Move rook first
                 if (kingside) {
                     board[0][5] = board[0][7];
                     board[0][7] = nullptr;
@@ -673,35 +688,75 @@ public:
                     board[0][0] = nullptr;
                 }
             }
+            
+            // Move king to castling position
+            board[to.first][to.second] = piece;
+            board[from.first][from.second] = nullptr;
+            piece->hasMoved = true;
+            
+            // Update castling flags
+            if (currentTurn == WHITE) {
+                whiteKingMoved = true;
+                if (kingside) whiteRookRightMoved = true;
+                else whiteRookLeftMoved = true;
+            } else {
+                blackKingMoved = true;
+                if (kingside) blackRookRightMoved = true;
+                else blackRookLeftMoved = true;
+            }
+            
+            updatePiecePositions();
+            
+            // Check for check/checkmate
+            Color oppositeColor = (currentTurn == WHITE) ? BLACK : WHITE;
+            if (isInCheck(oppositeColor)) {
+                cout << "\n*** CHECK! ***\n";
+                if (isCheckmate(oppositeColor)) {
+                    cout << "\n*** CHECKMATE! " << (currentTurn == WHITE ? "White" : "Black") << " wins! ***\n";
+                    return true;
+                }
+            } else if (isStalemate(oppositeColor)) {
+                cout << "\n*** STALEMATE! It's a draw! ***\n";
+                return true;
+            }
+            
+            // Check for 50-move rule
+            if (movesSinceCapture >= 100) {
+                cout << "\n*** DRAW by 50-move rule! ***\n";
+                return true;
+            }
+            
+            currentTurn = oppositeColor;
+            return false;
         } else {
             to = parseDirection(direction, from, steps);
         }
         
         if (to.first < 0 || to.first >= 8 || to.second < 0 || to.second >= 8) {
-            cout << "Invalid move - out of bounds!\n";
+            cout << "\n*** ERROR: Invalid move - out of bounds! ***\n";
             return false;
         }
         
         if (!isValidMove(from, to)) {
-            cout << "Invalid move!\n";
+            cout << "\n*** ERROR: Invalid move! ***\n";
             return false;
         }
         
         // Only check path for sliding pieces, not knights
         if (piece->getType() != "Knight" && !isPathClear(from, to)) {
-            cout << "Path blocked!\n";
+            cout << "\n*** ERROR: Path blocked! ***\n";
             return false;
         }
         
         if (wouldBeInCheck(from, to, currentTurn)) {
-            cout << "Move would leave king in check!\n";
+            cout << "\n*** ERROR: Move would leave king in check! ***\n";
             return false;
         }
         
         // Execute move
         Piece* captured = board[to.first][to.second];
         if (captured != nullptr) {
-            cout << "You captured " << captured->name << " (" << captured->getType() << ")!\n";
+            cout << "\n*** SUCCESS: You captured " << captured->name << " (" << captured->getType() << ")! ***\n";
             movesSinceCapture = 0;
         } else {
             movesSinceCapture++;
@@ -730,19 +785,19 @@ public:
         // Check for check/checkmate
         Color oppositeColor = (currentTurn == WHITE) ? BLACK : WHITE;
         if (isInCheck(oppositeColor)) {
-            cout << "Check!\n";
+            cout << "\n*** CHECK! ***\n";
             if (isCheckmate(oppositeColor)) {
-                cout << "Checkmate! " << (currentTurn == WHITE ? "White" : "Black") << " wins!\n";
+                cout << "\n*** CHECKMATE! " << (currentTurn == WHITE ? "White" : "Black") << " wins! ***\n";
                 return true;
             }
         } else if (isStalemate(oppositeColor)) {
-            cout << "Stalemate! It's a draw!\n";
+            cout << "\n*** STALEMATE! It's a draw! ***\n";
             return true;
         }
         
         // Check for 50-move rule
         if (movesSinceCapture >= 100) {
-            cout << "Draw by 50-move rule!\n";
+            cout << "\n*** DRAW by 50-move rule! ***\n";
             return true;
         }
         
@@ -754,25 +809,39 @@ public:
         printBoard();
         
         while (true) {
-            cout << (currentTurn == WHITE ? "White's" : "Black's") << " turn\n";
+            cout << "\n*** " << (currentTurn == WHITE ? "White's" : "Black's") << " turn ***\n";
             showAlivePieces(currentTurn);
             
-            cout << "Available directions:\n";
-            cout << "For Pawns: up, slantleftup, slantrightup\n";
-            cout << "For Knights: upleft, upright, leftup, leftdown, rightup, rightdown, downleft, downright\n";
-            cout << "For others: up, down, left, right, slantleftup, slantleftdown, slantrightup, slantrightdown\n";
-            cout << "For King: castle-left, castle-right (in addition to above)\n\n";
+            cout << "\n*** Available directions (short forms): ***\n";
+            cout << "For Pawns: U, SLU, SRU\n";
+            cout << "For Knights: UL, UR, LU, LD, RU, RD, DL, DR\n";
+            cout << "For others: U, D, L, R, SLU, SLD, SRU, SRD\n";
+            cout << "For King: CL, CR (in addition to above)\n\n";
             
             string pieceCode, direction;
             int steps;
             
-            cout << "Enter piece code: ";
+            cout << "Enter piece code (or 'quit' to exit): ";
             cin >> pieceCode;
             
-            if (pieceCode == "quit") break;
+            if (pieceCode == "quit") {
+                cout << "\n*** Game ended by user. ***\n";
+                break;
+            }
             
-            cout << "Enter direction: ";
+            // Clear input buffer to prevent infinite loop
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            
+            cout << "Enter direction (short form): ";
             cin >> direction;
+            
+            // Clear input buffer
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            
+            // Expand short direction to full form
+            direction = expandDirection(direction);
             
             // For knight moves and castling, steps are not needed
             if (direction == "upleft" || direction == "upright" || 
@@ -784,12 +853,22 @@ public:
             } else {
                 cout << "Enter number of steps: ";
                 cin >> steps;
+                
+                // Handle invalid input for steps
+                while (cin.fail()) {
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                    cout << "\n*** ERROR: Please enter a valid number! ***\n";
+                    cout << "Enter number of steps: ";
+                    cin >> steps;
+                }
             }
             
             bool gameOver = makeMove(pieceCode, direction, steps);
             printBoard();
             
             if (gameOver) {
+                cout << "\n*** Game Over! ***\n";
                 break;
             }
         }
@@ -797,8 +876,8 @@ public:
 };
 
 int main() {
-    cout << "Welcome to Chess Game!\n";
-    cout << "Piece codes: WP1-8/BP1-8 (Pawns), WK1-2/BK1-2 (Knights), WB1-2/BB1-2 (Bishops), WR1-2/BR1-2 (Rooks), WQ/BQ (Queen), WKG/BKG (King)\n";
+    cout << "\n*** Welcome to Chess Game! ***\n";
+    cout << "Piece codes: WP1-8/BP1-8 (Pawns), WN1-2/BN1-2 (Knights), WB1-2/BB1-2 (Bishops), WR1-2/BR1-2 (Rooks), WQ/BQ (Queen), WKG/BKG (King)\n";
     cout << "Type 'quit' as piece code to exit\n\n";
     
     Game game;
